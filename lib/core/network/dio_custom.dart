@@ -1,4 +1,5 @@
 import 'package:dio/dio.dart';
+import 'package:reetro_analyst_app/core/network/auth_interceptor.dart';
 
 Dio buildDio({
   String baseUrl = "http://127.0.0.1:8000",
@@ -23,6 +24,6 @@ Dio buildDio({
     responseBody: false, // bật true nếu muốn log body
     error: true,
   ));
-
+  dio.interceptors.add(AuthInterceptor());
   return dio;
 }

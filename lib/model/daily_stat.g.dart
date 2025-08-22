@@ -8,7 +8,7 @@ part of 'daily_stat.dart';
 
 DailyStat _$DailyStatFromJson(Map<String, dynamic> json) => DailyStat(
       ngayTrongThang: (json['ngay_trong_thang'] as num).toInt(),
-      tongGiaTri: (json['tong_gia_tri'] as num).toInt(),
+      tongGiaTri: (json['tong_gia_tri'] as num).toDouble(),
     );
 
 Map<String, dynamic> _$DailyStatToJson(DailyStat instance) => <String, dynamic>{

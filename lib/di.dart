@@ -1,16 +1,14 @@
 import 'package:reetro_analyst_app/core/network/dio_custom.dart';
-import 'package:reetro_analyst_app/service_api/chart_service_api.dart';
+import 'package:reetro_analyst_app/repositories/auth_repository.dart';
+import 'package:reetro_analyst_app/repositories/chart_repository.dart';
 
-final di = DI();
+import 'package:get_it/get_it.dart';
 
-class DI {
-  DI._privateConstructor();
+GetIt di = GetIt.instance;
 
-  static final DI _instance = DI._privateConstructor();
+Future<void> initDependency() async {
+  final dio = buildDio();
 
-  factory DI() {
-    return _instance;
-  }
-
-  final ChartApiService chartApiService = ChartApiService(buildDio());
+  di.registerLazySingleton<AuthRepository>(() => AuthRepository(dio));
+  di.registerLazySingleton<ChartRepository>(() => ChartRepository(dio));
 }

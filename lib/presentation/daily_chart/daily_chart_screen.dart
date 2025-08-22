@@ -1,8 +1,8 @@
-import 'dart:math';
-
 import 'package:flutter/material.dart';
 import 'package:reetro_analyst_app/di.dart';
+import 'package:reetro_analyst_app/repositories/chart_repository.dart';
 import 'package:syncfusion_flutter_charts/charts.dart';
+import 'package:intl/intl.dart';
 
 class DailyChartScreen extends StatefulWidget {
   const DailyChartScreen({super.key});
@@ -12,16 +12,85 @@ class DailyChartScreen extends StatefulWidget {
 }
 
 class _DailyChartScreenState extends State<DailyChartScreen> {
+  final numberFormatter = NumberFormat('#,###');
   @override
   void initState() {
-    // TODO: implement initState
+    _getThisMonthChart();
+    _getLastMonthChart();
     super.initState();
   }
 
-  List<ChartData> getChart() {
-    // di.chartApiService.getDailyStats(start: "2025-08-01", end: "2025-08-15");
-    return List.generate(31,
-        (index) => ChartData(index + 4, Random().nextDouble() * 10000000.0));
+  List<ChartData> chartSampleThisMonth =
+      List.generate(31, (index) => ChartData(index + 1, 0.0));
+  List<ChartData> chartSampleLastMonth =
+      List.generate(31, (index) => ChartData(index + 1, 0.0));
+
+  bool loading = true;
+
+  List<ChartData> replaceValueChart(
+      List<ChartData> current, List<ChartData> newValue) {
+    for (var i = 0; i < current.length; i++) {
+      final value = newValue.firstWhere(
+        (element) => element.x == current[i].x,
+        orElse: () => ChartData(current[i].x, 0.0),
+      );
+      current[i] = ChartData(current[i].x, value.y);
+    }
+    return current;
+  }
+
+  _getThisMonthChart() {
+    setState(() {
+      loading = true;
+    });
+    di
+        .get<ChartRepository>()
+        .getDailyStats("2025-08-01", "2025-08-30")
+        .then((value) {
+      value.fold((l) {
+        setState(() {
+          chartSampleThisMonth = l.map((e) {
+            return ChartData(e.ngayTrongThang, e.tongGiaTri);
+          }).toList();
+          loading = false;
+        });
+      }, (r) {
+        setState(() {
+          loading = false;
+        });
+      });
+    }).catchError((e) {
+      setState(() {
+        loading = false;
+      });
+    });
+  }
+
+  _getLastMonthChart() {
+    setState(() {
+      loading = true;
+    });
+    di
+        .get<ChartRepository>()
+        .getDailyStats("2025-07-01", "2025-07-30")
+        .then((value) {
+      value.fold((l) {
+        setState(() {
+          chartSampleLastMonth = l.map((e) {
+            return ChartData(e.ngayTrongThang, e.tongGiaTri);
+          }).toList();
+          loading = false;
+        });
+      }, (r) {
+        setState(() {
+          loading = false;
+        });
+      });
+    }).catchError((e) {
+      setState(() {
+        loading = false;
+      });
+    });
   }
 
   @override
@@ -32,28 +101,50 @@ class _DailyChartScreenState extends State<DailyChartScreen> {
       ),
       body: Material(
         child: Container(
-          height: MediaQuery.of(context).size.width * 0.5,
-          child: SfCartesianChart(
-            title: ChartTitle(text: 'Ví dụ Line Chart 2 đường'),
-            legend: Legend(isVisible: true),
-            primaryXAxis: NumericAxis(),
-            primaryYAxis: NumericAxis(),
-            series: <CartesianSeries>[
-              LineSeries<ChartData, int>(
-                name: 'Doanh thu',
-                dataSource: getChart(),
-                xValueMapper: (ChartData d, _) => d.x,
-                yValueMapper: (ChartData d, _) => d.y,
-                color: Colors.red,
+          width: double.infinity,
+          child: AspectRatio(
+            aspectRatio: 20 / 7,
+            child: SfCartesianChart(
+              title: ChartTitle(text: 'Tổng quan doanh thu'),
+              legend: Legend(isVisible: true),
+              tooltipBehavior: TooltipBehavior(
+                enable: true,
+                canShowMarker: true,
+                activationMode: ActivationMode.singleTap, // tap để hiện
+                format:
+                    'point.y', // hoặc '{series.name}\nX: point.x\nY: point.y'
+                header: '', // bỏ header mặc định
+                duration: 3000, // ms
               ),
-              LineSeries<ChartData, int>(
-                name: 'Chi phí',
-                dataSource: getChart(),
-                color: Colors.blue,
-                xValueMapper: (ChartData d, _) => d.x,
-                yValueMapper: (ChartData d, _) => d.y,
+              onTooltipRender: (TooltipArgs args) {
+                args.text =
+                    '${numberFormatter.format(args.dataPoints?[(args.pointIndex ?? 0).toInt()].y)}';
+              },
+              primaryXAxis: NumericAxis(
+                minimum: 1,
+                maximum: 31,
+                interval: 1,
               ),
-            ],
+              primaryYAxis: NumericAxis(),
+              series: <CartesianSeries>[
+                LineSeries<ChartData, int>(
+                  name: 'Doanh thu tháng này',
+                  dataSource: chartSampleThisMonth,
+                  xValueMapper: (ChartData d, _) => d.x,
+                  yValueMapper: (ChartData d, _) => d.y,
+                  width: 2,
+                  color: Colors.red,
+                ),
+                LineSeries<ChartData, int>(
+                  name: 'Doanh thu tháng trước',
+                  dataSource: chartSampleLastMonth,
+                  color: Colors.blue,
+                  width: 2,
+                  xValueMapper: (ChartData d, _) => d.x,
+                  yValueMapper: (ChartData d, _) => d.y,
+                ),
+              ],
+            ),
           ),
         ),
       ),

@@ -8,7 +8,7 @@ class DailyStat {
 
   /// tong_gia_tri từ API là số nguyên (VND). Để an toàn dùng int.
   @JsonKey(name: 'tong_gia_tri')
-  final int tongGiaTri;
+  final double tongGiaTri;
 
   DailyStat({
     required this.ngayTrongThang,
