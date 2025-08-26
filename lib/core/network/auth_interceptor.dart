@@ -1,5 +1,8 @@
 import 'package:dio/dio.dart';
+import 'package:flutter/material.dart';
 import 'package:reetro_analyst_app/core/local/shared_ref.dart';
+import 'package:reetro_analyst_app/main.dart';
+import 'package:reetro_analyst_app/presentation/login/login_screen.dart';
 
 class AuthInterceptor extends QueuedInterceptorsWrapper {
   AuthInterceptor();
@@ -29,6 +32,9 @@ class AuthInterceptor extends QueuedInterceptorsWrapper {
 
     if (err.response != null && err.response?.statusCode == 403) {
       prefs.setString("access_token", "");
+      Navigator.of(navigatorKey.currentContext!).pushReplacement(
+        MaterialPageRoute(builder: (context) => const LoginScreen()),
+      );
     } else {
       handler.next(err);
     }
