@@ -15,8 +15,7 @@ class _DailyChartScreenState extends State<DailyChartScreen> {
   final numberFormatter = NumberFormat('#,###');
   @override
   void initState() {
-    _getThisMonthChart();
-    _getLastMonthChart();
+    getThisAndLastMonthDateRange();
     super.initState();
   }
 
@@ -39,14 +38,11 @@ class _DailyChartScreenState extends State<DailyChartScreen> {
     return current;
   }
 
-  _getThisMonthChart() {
+  _getThisMonthChart(String start, String end) {
     setState(() {
       loading = true;
     });
-    di
-        .get<ChartRepository>()
-        .getDailyStats("2025-09-01", "2025-09-30")
-        .then((value) {
+    di.get<ChartRepository>().getDailyStats(start, end).then((value) {
       value.fold((l) {
         setState(() {
           chartSampleThisMonth = l.map((e) {
@@ -66,14 +62,11 @@ class _DailyChartScreenState extends State<DailyChartScreen> {
     });
   }
 
-  _getLastMonthChart() {
+  _getLastMonthChart(String start, String end) {
     setState(() {
       loading = true;
     });
-    di
-        .get<ChartRepository>()
-        .getDailyStats("2025-08-01", "2025-08-31")
-        .then((value) {
+    di.get<ChartRepository>().getDailyStats(start, end).then((value) {
       value.fold((l) {
         setState(() {
           chartSampleLastMonth = l.map((e) {
@@ -105,27 +98,26 @@ class _DailyChartScreenState extends State<DailyChartScreen> {
           child: AspectRatio(
             aspectRatio: 20 / 7,
             child: SfCartesianChart(
-              title: ChartTitle(text: 'Tổng quan doanh thu'),
-              legend: Legend(isVisible: true),
+              title: const ChartTitle(text: 'Tổng quan doanh thu'),
+              legend: const Legend(isVisible: true),
               tooltipBehavior: TooltipBehavior(
                 enable: true,
                 canShowMarker: true,
-                activationMode: ActivationMode.singleTap, // tap để hiện
-                format:
-                    'point.y', // hoặc '{series.name}\nX: point.x\nY: point.y'
-                header: '', // bỏ header mặc định
-                duration: 3000, // ms
+                activationMode: ActivationMode.singleTap,
+                format: 'point.y',
+                header: '',
+                duration: 3000,
               ),
               onTooltipRender: (TooltipArgs args) {
-                args.text =
-                    '${numberFormatter.format(args.dataPoints?[(args.pointIndex ?? 0).toInt()].y)}';
+                args.text = numberFormatter
+                    .format(args.dataPoints?[(args.pointIndex ?? 0).toInt()].y);
               },
-              primaryXAxis: NumericAxis(
+              primaryXAxis: const NumericAxis(
                 minimum: 1,
                 maximum: 31,
                 interval: 1,
               ),
-              primaryYAxis: NumericAxis(),
+              primaryYAxis: const NumericAxis(),
               series: <CartesianSeries>[
                 LineSeries<ChartData, int>(
                   name: 'Doanh thu tháng này',
@@ -149,6 +141,20 @@ class _DailyChartScreenState extends State<DailyChartScreen> {
         ),
       ),
     );
+  }
+
+  void getThisAndLastMonthDateRange() {
+    final now = DateTime.now();
+    final thisMonthFirst = DateTime(now.year, now.month, 1);
+    final thisMonthLast = DateTime(now.year, now.month + 1, 0);
+    final lastMonth = DateTime(now.year, now.month - 1, 1);
+    final lastMonthFirst = DateTime(lastMonth.year, lastMonth.month, 1);
+    final lastMonthLast = DateTime(lastMonth.year, lastMonth.month + 1, 0);
+
+    String format(DateTime d) =>
+        "${d.year.toString().padLeft(4, '0')}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}";
+    _getThisMonthChart(format(thisMonthFirst), format(thisMonthLast));
+    _getLastMonthChart(format(lastMonthFirst), format(lastMonthLast));
   }
 }
 
