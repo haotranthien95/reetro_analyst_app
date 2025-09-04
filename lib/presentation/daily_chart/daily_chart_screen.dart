@@ -45,7 +45,7 @@ class _DailyChartScreenState extends State<DailyChartScreen> {
     });
     di
         .get<ChartRepository>()
-        .getDailyStats("2025-08-01", "2025-08-30")
+        .getDailyStats("2025-09-01", "2025-09-30")
         .then((value) {
       value.fold((l) {
         setState(() {
@@ -72,7 +72,7 @@ class _DailyChartScreenState extends State<DailyChartScreen> {
     });
     di
         .get<ChartRepository>()
-        .getDailyStats("2025-07-01", "2025-07-30")
+        .getDailyStats("2025-08-01", "2025-08-31")
         .then((value) {
       value.fold((l) {
         setState(() {
