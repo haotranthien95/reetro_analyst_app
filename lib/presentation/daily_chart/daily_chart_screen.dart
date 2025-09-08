@@ -23,6 +23,8 @@ class _DailyChartScreenState extends State<DailyChartScreen> {
       List.generate(31, (index) => ChartData(index + 1, 0.0));
   List<ChartData> chartSampleLastMonth =
       List.generate(31, (index) => ChartData(index + 1, 0.0));
+  int totalThisMonth = 0;
+  int totalLastMonth = 0;
 
   bool loading = true;
 
@@ -86,6 +88,29 @@ class _DailyChartScreenState extends State<DailyChartScreen> {
     });
   }
 
+  _getMonthlyStats(String today) {
+    setState(() {
+      loading = true;
+    });
+    di.get<ChartRepository>().getMonthlyStats(today).then((value) {
+      value.fold((l) {
+        setState(() {
+          totalThisMonth = l.totalThisMonth;
+          totalLastMonth = l.totalLastMonth;
+          loading = false;
+        });
+      }, (r) {
+        setState(() {
+          loading = false;
+        });
+      });
+    }).catchError((e) {
+      setState(() {
+        loading = false;
+      });
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -93,51 +118,59 @@ class _DailyChartScreenState extends State<DailyChartScreen> {
         title: const Text("Daily Chart"),
       ),
       body: Material(
-        child: Container(
-          width: double.infinity,
-          child: AspectRatio(
-            aspectRatio: 20 / 7,
-            child: SfCartesianChart(
-              title: const ChartTitle(text: 'Tổng quan doanh thu'),
-              legend: const Legend(isVisible: true),
-              tooltipBehavior: TooltipBehavior(
-                enable: true,
-                canShowMarker: true,
-                activationMode: ActivationMode.singleTap,
-                format: 'point.y',
-                header: '',
-                duration: 3000,
-              ),
-              onTooltipRender: (TooltipArgs args) {
-                args.text = numberFormatter
-                    .format(args.dataPoints?[(args.pointIndex ?? 0).toInt()].y);
-              },
-              primaryXAxis: const NumericAxis(
-                minimum: 1,
-                maximum: 31,
-                interval: 1,
-              ),
-              primaryYAxis: const NumericAxis(),
-              series: <CartesianSeries>[
-                LineSeries<ChartData, int>(
-                  name: 'Doanh thu tháng này',
-                  dataSource: chartSampleThisMonth,
-                  xValueMapper: (ChartData d, _) => d.x,
-                  yValueMapper: (ChartData d, _) => d.y,
-                  width: 2,
-                  color: Colors.red,
+        child: Column(
+          children: [
+            Text(
+                "Cùng kỳ tháng này: ${numberFormatter.format(totalThisMonth)}"),
+            Text(
+                "Cùng kỳ tháng trước: ${numberFormatter.format(totalLastMonth)}"),
+            Container(
+              width: double.infinity,
+              child: AspectRatio(
+                aspectRatio: 20 / 7,
+                child: SfCartesianChart(
+                  title: const ChartTitle(text: 'Tổng quan doanh thu'),
+                  legend: const Legend(isVisible: true),
+                  tooltipBehavior: TooltipBehavior(
+                    enable: true,
+                    canShowMarker: true,
+                    activationMode: ActivationMode.singleTap,
+                    format: 'point.y',
+                    header: '',
+                    duration: 3000,
+                  ),
+                  onTooltipRender: (TooltipArgs args) {
+                    args.text = numberFormatter.format(
+                        args.dataPoints?[(args.pointIndex ?? 0).toInt()].y);
+                  },
+                  primaryXAxis: const NumericAxis(
+                    minimum: 1,
+                    maximum: 31,
+                    interval: 1,
+                  ),
+                  primaryYAxis: const NumericAxis(),
+                  series: <CartesianSeries>[
+                    LineSeries<ChartData, int>(
+                      name: 'Doanh thu tháng này',
+                      dataSource: chartSampleThisMonth,
+                      xValueMapper: (ChartData d, _) => d.x,
+                      yValueMapper: (ChartData d, _) => d.y,
+                      width: 2,
+                      color: Colors.red,
+                    ),
+                    LineSeries<ChartData, int>(
+                      name: 'Doanh thu tháng trước',
+                      dataSource: chartSampleLastMonth,
+                      color: Colors.blue,
+                      width: 2,
+                      xValueMapper: (ChartData d, _) => d.x,
+                      yValueMapper: (ChartData d, _) => d.y,
+                    ),
+                  ],
                 ),
-                LineSeries<ChartData, int>(
-                  name: 'Doanh thu tháng trước',
-                  dataSource: chartSampleLastMonth,
-                  color: Colors.blue,
-                  width: 2,
-                  xValueMapper: (ChartData d, _) => d.x,
-                  yValueMapper: (ChartData d, _) => d.y,
-                ),
-              ],
+              ),
             ),
-          ),
+          ],
         ),
       ),
     );
@@ -155,6 +188,7 @@ class _DailyChartScreenState extends State<DailyChartScreen> {
         "${d.year.toString().padLeft(4, '0')}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}";
     _getThisMonthChart(format(thisMonthFirst), format(thisMonthLast));
     _getLastMonthChart(format(lastMonthFirst), format(lastMonthLast));
+    _getMonthlyStats(format(now));
   }
 }
 
